@@ -4,10 +4,20 @@ from typing import List, Union, Iterable, Dict
 import itertools
 
 import numpy as np
+import os
 import tqdm
 
 from human_eval.data import HUMAN_EVAL, read_problems, stream_jsonl, write_jsonl
 from human_eval.execution import check_correctness
+
+
+def get_output_filename(output_dir, sample_filepath=None, 
+            suffix="_results.jsonl"):
+    if output_dir is None:
+        return sample_filepath + suffix
+    else:
+        sample_filename, _ = os.path.splitext(os.path.basename(sample_filepath))
+        return os.path.join(output_dir, sample_filename + suffix)
 
 
 def estimate_pass_at_k(
@@ -42,6 +52,7 @@ def evaluate_functional_correctness(
     n_workers: int = 4,
     timeout: float = 3.0,
     problem_file: str = HUMAN_EVAL,
+    output_dir: str = None
 ):
     """
     Evaluates the functional correctness of generated samples, and writes
@@ -98,7 +109,8 @@ def evaluate_functional_correctness(
             sample["passed"] = result[1]["passed"]
             yield sample
 
-    out_file = sample_file + "_results.jsonl"
+    out_file = get_output_filename(output_dir, sample_filepath=sample_file, 
+            suffix="_results.jsonl")
     print(f"Writing results to {out_file}...")
     write_jsonl(out_file, tqdm.tqdm(combine_results(), total=n_samples))
 
